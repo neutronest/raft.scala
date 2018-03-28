@@ -1,2 +1,2 @@
-# raft.scala
-A simple raft protocol implementation
+# com.neulab.raft.scala
+A simple com.neulab.raft protocol implementation
