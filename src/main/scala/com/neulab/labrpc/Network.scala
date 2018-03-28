@@ -2,6 +2,14 @@ package com.neulab.labrpc
 
 import scala.collection.mutable.HashMap
 
+
+object Network {
+
+  def makeNetwork() : Network = {
+    return null
+  }
+}
+
 class Network
 (
   var reliable : Boolean,
