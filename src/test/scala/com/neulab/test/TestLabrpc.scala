@@ -7,12 +7,14 @@ import akka.testkit.{ImplicitSender, TestActors, TestKit}
 import akka.actor.{ Props, Deploy, Address, AddressFromURIString }
 import akka.remote.RemoteScope
 
+
 import com.neulab.labrpc._
 
 
-class JunkArgs(var args: Int)
 
-class JunkReply(var reply: String)
+class JunkArgs(var args: Int) extends RpcArgs
+
+class JunkReply(var reply: String) extends RpcReply
 
 class JunkClass(var log1: ArrayBuffer[Int], var log2: ArrayBuffer[String])  {
 
@@ -20,6 +22,11 @@ class JunkClass(var log1: ArrayBuffer[Int], var log2: ArrayBuffer[String])  {
       log1 += junkArgs.args
       junkReply.reply = junkArgs.args.toString
       println("Handle1 has been called!")
+    }
+
+    def handle4(junkArgs: JunkArgs, junkReply: JunkReply) = {
+      junkReply.reply = "ha? fa? van?"
+      println("Called handle4 Ok")
     }
 }
 
@@ -42,10 +49,18 @@ class JunkActor(junkObj: JunkClass) extends Actor {
       } else {
         println("Finally")
       }
-
     }
-    case _ =>
+    case ("handle4", junkArgs: JunkArgs, junkReply: JunkReply) => {
+      junkObj.handle4(junkArgs, junkReply)
+      sender ! junkReply.reply
+    }
+
+    case _ => {
+      println("received but nothing happend!")
+    }
   }
+
+
 
 }
 
@@ -56,8 +71,8 @@ class TestLabrpc extends TestKit(ActorSystem("Labrpc")) with ImplicitSender with
 
 
   "Test Basic" must {
-    var junkArgs = new JunkArgs(100)
-    var junkReply = new JunkReply("van?")
+    var junkArgs: JunkArgs = new JunkArgs(100)
+    var junkReply: JunkReply = new JunkReply("van?")
 
     var junkObj1 = new JunkClass(new ArrayBuffer[Int](), new ArrayBuffer[String]())
     var junkObj2 = new JunkClass(new ArrayBuffer[Int](), new ArrayBuffer[String]())
@@ -68,8 +83,28 @@ class TestLabrpc extends TestKit(ActorSystem("Labrpc")) with ImplicitSender with
       withDeploy(Deploy(scope = RemoteScope(one))))
     val server2Actor = system.actorOf(JunkActor.props(junkObj2).
       withDeploy(Deploy(scope = RemoteScope(two))))
-    server1Actor ! ("handle1", junkArgs, junkReply)
-    server2Actor ! ("handle1", junkArgs, junkReply)
+    //server1Actor ! ("handle1", junkArgs, junkReply)
+    //server2Actor ! ("handle1", junkArgs, junkReply)
+
+
+    var net = Network.makeNetwork()
+    var networkActor = system.actorOf(NetworkActor.props(net))
+    var end = new ClientEnd("end1-99")
+    var server = Server.makeServer()
+    server.addService("junk", server1Actor)
+    net.addServer("server99", server)
+    net.connect("end1-99", "server99")
+    net.enable("end1-99", true)
+    end.call(networkActor, "handle4", junkArgs, junkReply)
+    println(junkReply.reply)
+
+
+
+
+
+
+
+
 
 
 
