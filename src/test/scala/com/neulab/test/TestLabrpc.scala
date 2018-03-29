@@ -79,48 +79,61 @@ class TestLabrpc extends TestKit(ActorSystem("Labrpc")) with ImplicitSender with
     TestKit.shutdownActorSystem(system)
   }
 
+/*
+  def setup = new {
 
-  "Test Basic" in {
-    var junkArgs: JunkIntArgs = new JunkIntArgs(100)
-    var junkReply: JunkReply = new JunkReply("van?")
-
+    // rpc object init
     var junkObj1 = new JunkClass(new ArrayBuffer[Int](), new ArrayBuffer[String]())
-    var junkObj2 = new JunkClass(new ArrayBuffer[Int](), new ArrayBuffer[String]())
-
-    val one = akka.actor.Address("akka.tcp", "sys", "host", 9001)
-    val two = akka.actor.Address("akka.tcp", "sys", "host", 9002)
-    val server1Actor = system.actorOf(JunkActor.props(junkObj1).
-      withDeploy(Deploy(scope = RemoteScope(one))))
-    val server2Actor = system.actorOf(JunkActor.props(junkObj2).
-      withDeploy(Deploy(scope = RemoteScope(two))))
-    //server1Actor ! ("handle1", junkArgs, junkReply)
-    //server2Actor ! ("handle1", junkArgs, junkReply)
-
+    // akka remoting init
+    val address1 = akka.actor.Address("akka.tcp", "sys", "host", 9001)
+    val serverActor1 = system.actorOf(JunkActor.props(junkObj1).
+      withDeploy(Deploy(scope = RemoteScope(address1))))
 
     var net = Network.makeNetwork()
     var networkActor = system.actorOf(NetworkActor.props(net))
+  }
+*/
+
+  "Test Basic" in {
+
+    // rpc object init
+    var junkObj1 = new JunkClass(new ArrayBuffer[Int](), new ArrayBuffer[String]())
+    // akka remoting init
+    val address1 = akka.actor.Address("akka.tcp", "sys", "host", 9001)
+    val serverActor1 = system.actorOf(JunkActor.props(junkObj1).
+      withDeploy(Deploy(scope = RemoteScope(address1))))
+
+    var net = Network.makeNetwork()
+    var networkActor = system.actorOf(NetworkActor.props(net))
+    // args & replys prepare
+    var junkArgs: JunkIntArgs = new JunkIntArgs(100)
+    var junkReply: JunkReply = new JunkReply("ha? fa? van?")
     var end = new ClientEnd("end1-99")
     var server = Server.makeServer()
-    server.addService("junk", server1Actor)
+    server.addService("junk", serverActor1)
     net.addServer("server99", server)
     net.connect("end1-99", "server99")
     net.enable("end1-99", true)
     end.call(networkActor, "handle4", junkArgs, junkReply)
-    //assert(junkReply.reply == "ha? fa? van?")
     junkReply.reply should be("ha? fa? van?")
   }
 
+
+/*
   "Test Counts" in {
+
+    var junkArgs: JunkIntArgs = new JunkIntArgs(1)
+    var junkReply: JunkReply = new JunkReply("van?")
+    var junkObj1 = new JunkClass(new ArrayBuffer[Int](), new ArrayBuffer[String]())
+    val address1 = akka.actor.Address("akka.tcp", "sys", "host", 9001)
+    val serverActor1 = system.actorOf(JunkActor.props(junkObj1).
+      withDeploy(Deploy(scope = RemoteScope(address1))))
     var net = Network.makeNetwork()
     var networkActor = system.actorOf(NetworkActor.props(net))
     var end = new ClientEnd("end1-99")
 
     var server = Server.makeServer()
-    var junkObj1 = new JunkClass(new ArrayBuffer[Int](), new ArrayBuffer[String]())
-    val remoteAddress1 = akka.actor.Address("akka.tcp", "sys", "host", 9003)
-    val server1Actor = system.actorOf(JunkActor.props(junkObj1).
-      withDeploy(Deploy(scope = RemoteScope(remoteAddress1))))
-    server.addService("junk", server1Actor)
+    server.addService("junk", serverActor1)
 
     // add server with specific server-name
     // make connection between end1-99 and server
@@ -128,23 +141,14 @@ class TestLabrpc extends TestKit(ActorSystem("Labrpc")) with ImplicitSender with
     net.connect("end1-99", "server99")
     net.enable("end1-99", true)
 
-
-    var junkArgs: JunkIntArgs = new JunkIntArgs(1)
-    var junkReply: JunkReply = new JunkReply("van?")
     for (i <- 1 to 20) {
       end.call(networkActor, "handle2", junkArgs, junkReply)
       println("reply result: ", junkReply.reply)
     }
     junkReply.reply should be("20")
     server.getCount() should be(20)
-
-
-
-
-
-
   }
-
+*/
   "An Echo actor" must {
     "send back message unchanged" in {
       val echo = system.actorOf(TestActors.echoActorProps)
