@@ -136,6 +136,8 @@ class TestLabrpc extends TestKit(ActorSystem("Labrpc")) with ImplicitSender with
       println("reply result: ", junkReply.reply)
     }
     junkReply.reply should be("20")
+    server.getCount() should be(20)
+
 
 
 

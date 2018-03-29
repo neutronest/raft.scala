@@ -94,6 +94,7 @@ class NetworkActor(var net: Network) extends Actor {
       val future = actor ? ((methodName, args, reply))
       val result = Await.result(future, timeout.duration).asInstanceOf[String]
       sender ! result
+      server.count += 1
       //actor ! ((methodName, args, reply))
       /*
       var targetServerNameOp = net.connections.get(endName)
