@@ -15,9 +15,7 @@ class ClientEnd(var endName : String) {
 
   def call(actorRef: ActorRef, methodName: String,  args: RpcArgs, reply: RpcReply): Unit = {
 
-
     implicit val timeout = Timeout(5 seconds)
-
     val future = actorRef ? ((endName, methodName, args, reply))
     val result = Await.result(future, timeout.duration).asInstanceOf[String]
     println("result: ", result)
