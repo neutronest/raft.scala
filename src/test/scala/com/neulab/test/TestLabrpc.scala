@@ -118,8 +118,45 @@ class TestLabrpc extends TestKit(ActorSystem("Labrpc")) with ImplicitSender with
     junkReply.reply should be("ha? fa? van?")
   }
 
+  "Test Disconnect" in {
+    var junkArgs: JunkIntArgs = new JunkIntArgs(100)
+    var junkReply: JunkReply = new JunkReply("van?")
+    var junkObj1 = new JunkClass(new ArrayBuffer[Int](), new ArrayBuffer[String]())
 
-/*
+    val address1 = akka.actor.Address("akka.tcp", "sys", "host", 9001)
+    val serverActor1 = system.actorOf(JunkActor.props(junkObj1).
+      withDeploy(Deploy(scope = RemoteScope(address1))))
+
+    var net = Network.makeNetwork()
+    var networkActor = system.actorOf(NetworkActor.props(net))
+
+    var end = new ClientEnd("client_closed")
+    var server = Server.makeServer()
+    server.addService("junk", serverActor1)
+
+    // network setup
+    // add server with specific server-name
+    // make connection between end1-99 and server
+    net.addServer("server99", server)
+    net.connect("client_closed", "server99")
+    //net.enable("client_closed", true)
+
+    //end.call(networkActor, "xxx", junkArgs, junkReply)
+    junkReply.reply = end.call(networkActor, "handle2", junkArgs, junkReply)
+    junkReply.reply should be("")
+
+    net.enable("client_closed", true)
+    junkReply.reply = end.call(networkActor, "handle2", junkArgs, junkReply)
+    junkReply.reply should be("100")
+
+
+
+
+
+  }
+
+
+
   "Test Counts" in {
 
     var junkArgs: JunkIntArgs = new JunkIntArgs(1)
@@ -143,12 +180,12 @@ class TestLabrpc extends TestKit(ActorSystem("Labrpc")) with ImplicitSender with
 
     for (i <- 1 to 20) {
       end.call(networkActor, "handle2", junkArgs, junkReply)
-      println("reply result: ", junkReply.reply)
+      //println("reply result: ", junkReply.reply)
     }
     junkReply.reply should be("20")
     server.getCount() should be(20)
   }
-*/
+
   "An Echo actor" must {
     "send back message unchanged" in {
       val echo = system.actorOf(TestActors.echoActorProps)

@@ -85,25 +85,29 @@ class NetworkActor(var net: Network) extends Actor {
   override def receive: Receive = {
     case (endName: String, methodName: String, args: RpcArgs, reply: RpcReply) => {
 
-      println("check serverName")
+      //println("check serverName")
       var serverName = net.connections.getOrElse(endName, "")
-      if (serverName == "") return receive
+      if (serverName == "") {
+       println("serverName not found!")
+        return receive
+      }
 
-      println("check server")
+      //println("check server")
       var server = net.servers.getOrElse(serverName, null)
       if (server == null) return receive
 
-      println("check actor")
+      //println("check actor")
       var actor = server.services.getOrElse("junk", null)
       if (actor == null) return receive
 
-      println("check connect or disconnect")
+      //println("check connect or disconnect")
       if (net.enabled.getOrElse(endName, false) == false) {
-        print("what? not found")
+        println("what? not found")
+        sender ! ""
         return receive
-      }
-      println("lucky!")
 
+      }
+      
       implicit val timeout = Timeout(5 seconds)
 
       val future = actor ? ((methodName, args, reply))
