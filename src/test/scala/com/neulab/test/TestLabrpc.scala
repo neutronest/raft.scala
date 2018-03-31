@@ -196,6 +196,37 @@ class TestLabrpc extends TestKit(ActorSystem("Labrpc")) with ImplicitSender with
     server.getCount() should be(20)
   }
 
+  "Test Benchmark" in {
+
+    // rpc object init
+    var junkObj1 = new JunkClass(new ArrayBuffer[Int](), new ArrayBuffer[String]())
+    // akka remoting init
+    val address1 = akka.actor.Address("akka.tcp", "sys", "host", 9001)
+    val serverActor1 = system.actorOf(JunkActor.props(junkObj1).
+      withDeploy(Deploy(scope = RemoteScope(address1))))
+
+    var net = Network.makeNetwork()
+    var networkActor = system.actorOf(NetworkActor.props(net))
+    // args & replys prepare
+    var junkArgs: JunkIntArgs = new JunkIntArgs(100)
+    var junkReply: JunkReply = new JunkReply("ha? fa? van?")
+    var end = new ClientEnd("end1-99")
+    var server = Server.makeServer()
+    server.addService("junk", serverActor1)
+    net.addServer("server99", server)
+    net.connect("end1-99", "server99")
+    net.enable("end1-99", true)
+
+    val t0 = System.nanoTime()
+    val n = 100000
+    for (i <- 1 to n)  {
+      end.call(networkActor, "handle2", junkArgs, junkReply)
+    }
+    val t1 = System.nanoTime()
+    println("Elapsed times: " + (t1 - t0) / 1000000000.0 + "ms")
+
+  }
+
 
 
   "An Echo actor" must {
