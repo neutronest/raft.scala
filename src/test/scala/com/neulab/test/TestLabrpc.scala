@@ -14,7 +14,22 @@ import com.neulab.labrpc._
 
 class JunkIntArgs(var args: Int) extends RpcArgs
 
-class JunkReply(var reply: String) extends RpcReply
+class JunkReply(var reply: String) extends RpcReply {
+
+  type R = String
+  var values = ""
+
+  override def getValues(): String = {
+    return values
+  }
+
+  override def setValues(values: String): Unit = {
+    this.values = values
+
+  }
+
+
+}
 
 class JunkClass(var log1: ArrayBuffer[Int], var log2: ArrayBuffer[String])  {
 
@@ -48,7 +63,6 @@ class JunkActor(junkObj: JunkClass) extends Actor {
     case ("handle1", junkArgs: JunkIntArgs, junkReply: JunkReply) => {
       if (junkArgs.args > 0) {
         junkArgs.args -= 1
-        println("args: ", junkArgs.args)
         junkObj.handle1(junkArgs, junkReply)
 
       } else {
@@ -114,13 +128,14 @@ class TestLabrpc extends TestKit(ActorSystem("Labrpc")) with ImplicitSender with
     net.addServer("server99", server)
     net.connect("end1-99", "server99")
     net.enable("end1-99", true)
+
     end.call(networkActor, "handle4", junkArgs, junkReply)
     junkReply.reply should be("ha? fa? van?")
   }
 
   "Test Disconnect" in {
     var junkArgs: JunkIntArgs = new JunkIntArgs(100)
-    var junkReply: JunkReply = new JunkReply("van?")
+    var junkReply: JunkReply = new JunkReply("")
     var junkObj1 = new JunkClass(new ArrayBuffer[Int](), new ArrayBuffer[String]())
 
     val address1 = akka.actor.Address("akka.tcp", "sys", "host", 9001)
@@ -142,25 +157,20 @@ class TestLabrpc extends TestKit(ActorSystem("Labrpc")) with ImplicitSender with
     //net.enable("client_closed", true)
 
     //end.call(networkActor, "xxx", junkArgs, junkReply)
-    junkReply.reply = end.call(networkActor, "handle2", junkArgs, junkReply)
+    end.call(networkActor, "handle2", junkArgs, junkReply)
     junkReply.reply should be("")
 
     net.enable("client_closed", true)
-    junkReply.reply = end.call(networkActor, "handle2", junkArgs, junkReply)
+    end.call(networkActor, "handle2", junkArgs, junkReply)
     junkReply.reply should be("100")
 
-
-
-
-
   }
-
 
 
   "Test Counts" in {
 
     var junkArgs: JunkIntArgs = new JunkIntArgs(1)
-    var junkReply: JunkReply = new JunkReply("van?")
+    var junkReply: JunkReply = new JunkReply("")
     var junkObj1 = new JunkClass(new ArrayBuffer[Int](), new ArrayBuffer[String]())
     val address1 = akka.actor.Address("akka.tcp", "sys", "host", 9001)
     val serverActor1 = system.actorOf(JunkActor.props(junkObj1).
@@ -185,6 +195,8 @@ class TestLabrpc extends TestKit(ActorSystem("Labrpc")) with ImplicitSender with
     junkReply.reply should be("20")
     server.getCount() should be(20)
   }
+
+
 
   "An Echo actor" must {
     "send back message unchanged" in {

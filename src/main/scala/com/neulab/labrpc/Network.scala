@@ -107,7 +107,7 @@ class NetworkActor(var net: Network) extends Actor {
         return receive
 
       }
-      
+
       implicit val timeout = Timeout(5 seconds)
 
       val future = actor ? ((methodName, args, reply))
