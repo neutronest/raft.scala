@@ -1,12 +1,16 @@
 package com.neulab.labrpc
 
 import akka.actor.ActorRef
+import akka.pattern.ask
+import scala.concurrent.Future
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.util.Timeout
+
 import scala.concurrent.duration._
 import akka.pattern.ask
-import scala.concurrent.Await
+
 import scala.collection.mutable.HashMap
+import scala.concurrent.Await
 import scala.concurrent.Await
 
 
@@ -85,35 +89,92 @@ class NetworkActor(var net: Network) extends Actor {
   override def receive: Receive = {
     case (endName: String, methodName: String, args: RpcArgs, reply: RpcReply) => {
 
+      net.connections.get(endName).map{
+        serverName => {
+          net.servers.get(serverName).map{
+            server => {
+              server.services.get("junk").map(
+                actor => {
+                  if (net.enabled.getOrElse(endName, false) == false) {
+                    println("what? not found")
+                    sender ! ""
+                    return receive
+                  }
+                  implicit val timeout = Timeout(5 seconds)
+                  val future = actor ? ((methodName, args, reply))
+                  val result = Await.result(future, timeout.duration).asInstanceOf[String]
+                  //val result : Future[String] = ask (actor, (methodName, args, reply)).mapTo[String]
+
+                  sender ! result
+                  server.count += 1
+                }
+              )
+            }
+          }
+        }
+      }
+
+//      val serverNameOption = net.connections.get(endName)
+//      serverNameOption match {
+//        case Some(serverName) => {
+//          val serverOption = net.servers.get(serverName)
+//          serverOption match {
+//            case Some(server) => {
+//              val actorOption = server.services.get("junk")
+//              actorOption match {
+//                case Some(actor) => {
+//                  implicit val timeout = Timeout(5 seconds)
+//                  val future = actor ? ((methodName, args, reply))
+//                  val result = Await.result(future, timeout.duration).asInstanceOf[String]
+//                  //val result : Future[String] = ask (actor, (methodName, args, reply)).mapTo[String]
+//
+//                  sender ! result
+//                  server.count += 1
+//                }
+//                case _ =>
+//              }
+//            }
+//            case _ =>
+//          }
+//        }
+//        case _ =>
+//      }
+//
       //println("check serverName")
-      var serverName = net.connections.getOrElse(endName, "")
-      if (serverName == "") {
-       println("serverName not found!")
-        return receive
-      }
+      //      var serverName = net.connections.getOrElse(endName, "")
+      //      if (serverName == "") {
+      //       println("serverName not found!")
+      //        return receive
+      //      }
+      //
+      //      //println("check server")
+      //      var server = net.servers.getOrElse(serverName, null)
+      //      if (server == null) return receive
+      //
+      //      //println("check actor")
+      //      var actor = server.services.getOrElse("junk", null)
+      //      if (actor == null) return receive
+      //
+      //      //println("check connect or disconnect")
+      //      if (net.enabled.getOrElse(endName, false) == false) {
+      //        println("what? not found")
+      //        sender ! ""
+      //        return receive
+      //
+      //      }
 
-      //println("check server")
-      var server = net.servers.getOrElse(serverName, null)
-      if (server == null) return receive
-
-      //println("check actor")
-      var actor = server.services.getOrElse("junk", null)
-      if (actor == null) return receive
-
-      //println("check connect or disconnect")
-      if (net.enabled.getOrElse(endName, false) == false) {
-        println("what? not found")
-        sender ! ""
-        return receive
-
-      }
-
-      implicit val timeout = Timeout(5 seconds)
-
-      val future = actor ? ((methodName, args, reply))
-      val result = Await.result(future, timeout.duration).asInstanceOf[String]
-      sender ! result
-      server.count += 1
+      //      implicit val timeout = Timeout(5 seconds)
+      //
+      //      val future = actor ? ((methodName, args, reply))
+      //      val result = Await.result(future, timeout.duration).asInstanceOf[String]
+      //      val result : Future[String] = ask (actor, (methodName, args, reply)).mapTo[String]
+      //      result map {
+      //        reply =>
+      //          sender ! reply
+      //      }
+      //      sender ! result
+      //      server.count += 1
+      //    }
     }
     case _ =>
   }

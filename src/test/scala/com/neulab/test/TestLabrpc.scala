@@ -18,7 +18,7 @@ class JunkReply(var reply: String) extends RpcReply {
 
   type R = String
   var values = ""
-
+  
   override def getValues(): String = {
     return values
   }
@@ -122,12 +122,12 @@ class TestLabrpc extends TestKit(ActorSystem("Labrpc")) with ImplicitSender with
     // args & replys prepare
     var junkArgs: JunkIntArgs = new JunkIntArgs(100)
     var junkReply: JunkReply = new JunkReply("ha? fa? van?")
-    var end = new ClientEnd("end1-99")
+    var end = new ClientEnd("end_basic")
     var server = Server.makeServer()
     server.addService("junk", serverActor1)
-    net.addServer("server99", server)
-    net.connect("end1-99", "server99")
-    net.enable("end1-99", true)
+    net.addServer("server_basic", server)
+    net.connect("end_basic", "server_basic")
+    net.enable("end_basic", true)
 
     end.call(networkActor, "handle4", junkArgs, junkReply)
     junkReply.reply should be("ha? fa? van?")
@@ -220,10 +220,12 @@ class TestLabrpc extends TestKit(ActorSystem("Labrpc")) with ImplicitSender with
     val t0 = System.nanoTime()
     val n = 100000
     for (i <- 1 to n)  {
+
+      end.call(networkActor, "handle2", junkArgs, junkReply)
       end.call(networkActor, "handle2", junkArgs, junkReply)
     }
     val t1 = System.nanoTime()
-    println("Elapsed times: " + (t1 - t0) / 1000000000.0 + "ms")
+    println("Elapsed times: " + (t1 - t0) / 1000000000.0 + "s")
 
   }
 
